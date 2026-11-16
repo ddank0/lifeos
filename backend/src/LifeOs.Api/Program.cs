@@ -24,9 +24,10 @@ builder.Services.AddScoped<UserOnboardingService>();
 builder.Services.AddApplicationServices();
 
 var useInMemory = builder.Configuration.GetValue<bool>("UseInMemoryDatabase");
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-                       ?? builder.Configuration["DATABASE_URL"]
-                       ?? "Host=localhost;Port=5433;Database=lifeos_db;Username=lifeos_user;Password=lifeos_secret_pwd_2026";
+var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                          ?? builder.Configuration["DATABASE_URL"]
+                          ?? "Host=localhost;Port=5433;Database=lifeos_db;Username=lifeos_user;Password=lifeos_secret_pwd_2026";
+var connectionString = NormalizePostgresConnectionString(rawConnectionString);
 
 builder.Services.AddDbContext<LifeOsDbContext>(options =>
 {
@@ -167,4 +168,53 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
-public partial class Program;
+public partial class Program
+{
+    public static string NormalizePostgresConnectionString(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return "Host=localhost;Port=5433;Database=lifeos_db;Username=lifeos_user;Password=lifeos_secret_pwd_2026";
+        }
+
+        if (raw.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+            raw.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var uri = new Uri(raw);
+                var userInfo = uri.UserInfo.Split(':', 2);
+                var username = Uri.UnescapeDataString(userInfo[0]);
+                var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+                var host = uri.Host;
+                var port = uri.Port > 0 ? uri.Port : 5432;
+                var database = uri.AbsolutePath.TrimStart('/');
+
+                var builder = new Npgsql.NpgsqlConnectionStringBuilder
+                {
+                    Host = host,
+                    Port = port,
+                    Database = string.IsNullOrEmpty(database) ? "neondb" : database,
+                    Username = username,
+                    Password = password,
+                    SslMode = Npgsql.SslMode.Require,
+                    Pooling = true
+                };
+
+                return builder.ConnectionString;
+            }
+            catch
+            {
+                var clean = System.Text.RegularExpressions.Regex.Replace(raw, @"[?&]channel_binding=[^&]+", "");
+                clean = System.Text.RegularExpressions.Regex.Replace(clean, @"\?&", "?");
+                if (clean.EndsWith("?"))
+                {
+                    clean = clean[..^1];
+                }
+                return clean;
+            }
+        }
+
+        return System.Text.RegularExpressions.Regex.Replace(raw, @"channel_binding=[^;]+;?", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+    }
+}
