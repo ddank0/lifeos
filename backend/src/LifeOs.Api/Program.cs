@@ -25,6 +25,7 @@ builder.Services.AddApplicationServices();
 
 var useInMemory = builder.Configuration.GetValue<bool>("UseInMemoryDatabase");
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                       ?? builder.Configuration["DATABASE_URL"]
                        ?? "Host=localhost;Port=5433;Database=lifeos_db;Username=lifeos_user;Password=lifeos_secret_pwd_2026";
 
 builder.Services.AddDbContext<LifeOsDbContext>(options =>
