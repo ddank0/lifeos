@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lifeos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lifeos_db}
+      POSTGRES_USER: ${POSTGRES_USER:-lifeos_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lifeos_secret_pwd_2026}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - lifeos_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lifeos_user} -d ${POSTGRES_DB:-lifeos_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+      target: dev
+    container_name: lifeos-backend
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - lifeos_nuget:/root/.nuget/packages
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-lifeos_db};Username=${POSTGRES_USER:-lifeos_user};Password=${POSTGRES_PASSWORD:-lifeos_secret_pwd_2026}"
+      Jwt__Secret: ${JWT_SECRET:-LifeOsSuperSecretJwtSigningKey2026WithAtLeast32Bytes!}
+      Jwt__Issuer: ${JWT_ISSUER:-LifeOs.Api}
+      Jwt__Audience: ${JWT_AUDIENCE:-LifeOs.Client}
+    ports:
+      - "${BACKEND_PORT:-5080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    container_name: lifeos-frontend
+    profiles:
+      - full
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-4200}:4200"
+    depends_on:
+      - backend
+
+volumes:
+  lifeos_pgdata:
+  lifeos_nuget:

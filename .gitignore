@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.angular/
+bin/
+obj/
+.env
+.superpowers/
+*.user
+*.suo
+coverage/
+playwright-report/
+test-results/
+.DS_Store
+*.log
+
