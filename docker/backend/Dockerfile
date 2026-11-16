@@ -18,7 +18,7 @@ RUN dotnet restore LifeOs.sln
 COPY backend/ ./
 RUN dotnet publish src/LifeOs.Api/LifeOs.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS production
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS production
 WORKDIR /app
 COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080
