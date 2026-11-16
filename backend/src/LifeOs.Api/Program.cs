@@ -110,7 +110,21 @@ builder.Services.AddCors(options =>
     options.AddPolicy("LifeOsCors", policy =>
     {
         policy
-            .WithOrigins(allOrigins)
+            .SetIsOriginAllowed(origin =>
+            {
+                if (string.IsNullOrWhiteSpace(origin)) return false;
+                try
+                {
+                    var uri = new Uri(origin);
+                    if (uri.Host == "localhost" || uri.Host == "127.0.0.1") return true;
+                    if (uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)) return true;
+                }
+                catch
+                {
+                    // ignored
+                }
+                return allOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase);
+            })
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -158,11 +172,19 @@ using (var scope = app.Services.CreateScope())
 
     if (!useInMemory)
     {
-        var recurringJobs = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
-        recurringJobs.AddOrUpdate<INotificationService>(
-            "process-due-reminders",
-            service => service.ProcessDueRemindersAsync(CancellationToken.None),
-            Cron.Minutely);
+        try
+        {
+            var recurringJobs = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+            recurringJobs.AddOrUpdate<INotificationService>(
+                "process-due-reminders",
+                service => service.ProcessDueRemindersAsync(CancellationToken.None),
+                Cron.Minutely);
+        }
+        catch (Exception ex)
+        {
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning(ex, "Nao foi possivel registrar o recurring job do Hangfire na inicializacao");
+        }
     }
 }
 
