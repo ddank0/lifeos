@@ -2060,12 +2060,18 @@ button:focus-visible,
   border: 1px solid var(--border-subtle);
   border-left: 4px solid var(--accent-sky);
   cursor: grab;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .kanban-card:hover {
-  transform: translateY(-2px);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+.kanban-card:active {
+  cursor: grabbing;
 }
 
 .kanban-card.overdue {
@@ -2118,21 +2124,96 @@ button:focus-visible,
   color: #18181b;
 }
 
+.cdk-drag-dragging {
+  transition: none !important;
+  cursor: grabbing !important;
+  z-index: 1000 !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5) !important;
+}
+
 .cdk-drag-preview {
   box-sizing: border-box;
   border-radius: 18px;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
   opacity: 0.95;
+  max-width: 310px;
+  transition: none !important;
+  pointer-events: none;
 }
 
 .cdk-drag-placeholder {
   opacity: 0.25;
   border: 2px dashed var(--accent-sky);
   border-radius: 18px;
+  background: rgba(169, 204, 240, 0.05);
+}
+
+.cdk-drop-list-dragging .kanban-card:not(.cdk-drag-placeholder) {
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
 }
 
 .cdk-drag-animating {
   transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Kanban Auto-scroll & Dragging States */
+.kanban-board-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.kanban-grid.is-dragging {
+  scroll-snap-type: none !important;
+  scroll-behavior: auto !important;
+}
+
+.kanban-grid.is-dragging .kanban-column {
+  scroll-snap-align: none !important;
+}
+
+.kanban-scroll-indicator {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: rgba(229, 152, 130, 0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1.5px solid var(--accent-coral);
+  color: var(--accent-coral);
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  animation: pulseScrollIndicator 0.75s ease-in-out infinite alternate;
+}
+
+.kanban-scroll-indicator.left {
+  left: 4px;
+}
+
+.kanban-scroll-indicator.right {
+  right: 4px;
+}
+
+.kanban-scroll-indicator svg {
+  width: 22px;
+  height: 22px;
+}
+
+@keyframes pulseScrollIndicator {
+  0% {
+    opacity: 0.65;
+    transform: translateY(-50%) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.06);
+  }
 }
 
 .inbox-card-list,
@@ -2305,6 +2386,15 @@ button:focus-visible,
     max-width: 320px;
     flex-shrink: 0;
     scroll-snap-align: start;
+  }
+
+  .kanban-grid.is-dragging {
+    scroll-snap-type: none !important;
+    scroll-behavior: auto !important;
+  }
+
+  .kanban-grid.is-dragging .kanban-column {
+    scroll-snap-align: none !important;
   }
 
   .calendar-toolbar-card {

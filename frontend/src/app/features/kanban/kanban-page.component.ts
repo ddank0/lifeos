@@ -1,6 +1,6 @@
-import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, CdkDragMove, CdkDragStart, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DashboardApiService } from '../../core/api/dashboard-api.service';
@@ -112,41 +112,50 @@ import { SignalRService } from '../../core/realtime/signalr.service';
       </div>
 
       @if (board(); as data) {
-        <div class="kanban-grid" cdkDropListGroup>
-          @for (col of data.columns; track col.status) {
-            <div class="kanban-column">
-              <div class="kanban-column-header">
-                <div style="display:flex;align-items:center;gap:8px">
-                  <h3 class="modal-title">{{ col.title }}</h3>
-                  <span class="tasks-counter">({{ col.cards.length }})</span>
-                </div>
-                <button
-                  type="button"
-                  class="kanban-col-add-btn"
-                  title="Adicionar cartão nesta coluna"
-                  (click)="openCreateModal(col.status)"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="ui-icon-xs" aria-hidden="true">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                </button>
-              </div>
-
-              <div
-                class="kanban-drop-zone"
-                cdkDropList
-                [cdkDropListData]="col.cards"
-                (cdkDropListDropped)="onCardDrop($event, col)"
-              >
-                @for (card of col.cards; track card.id) {
-                  <article
-                    class="kanban-card"
-                    cdkDrag
-                    [class.overdue]="card.isOverdue"
-                    [style.border-left-color]="card.areaColor"
-                    (click)="openEditModal(card)"
+        <div class="kanban-board-wrapper">
+          <div
+            #kanbanGrid
+            class="kanban-grid"
+            [class.is-dragging]="isDragging()"
+            cdkDropListGroup
+          >
+            @for (col of data.columns; track col.status) {
+              <div class="kanban-column">
+                <div class="kanban-column-header">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <h3 class="modal-title">{{ col.title }}</h3>
+                    <span class="tasks-counter">({{ col.cards.length }})</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="kanban-col-add-btn"
+                    title="Adicionar cartão nesta coluna"
+                    (click)="openCreateModal(col.status)"
                   >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="ui-icon-xs" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </button>
+                </div>
+
+                <div
+                  class="kanban-drop-zone"
+                  cdkDropList
+                  [cdkDropListData]="col.cards"
+                  (cdkDropListDropped)="onCardDrop($event, col)"
+                >
+                  @for (card of col.cards; track card.id) {
+                    <article
+                      class="kanban-card"
+                      cdkDrag
+                      (cdkDragStarted)="onCardDragStarted($event)"
+                      (cdkDragEnded)="onCardDragEnded()"
+                      (cdkDragReleased)="onCardDragEnded()"
+                      [class.overdue]="card.isOverdue"
+                      [style.border-left-color]="card.areaColor"
+                      (click)="openEditModal(card)"
+                    >
                     <div class="kanban-card-meta">
                       <span style="font-size:11.5px;font-weight:700" [style.color]="card.areaColor">
                         {{ card.areaName }}
@@ -225,6 +234,22 @@ import { SignalRService } from '../../core/realtime/signalr.service';
                   </p>
                 }
               </div>
+            </div>
+          }
+          </div>
+
+          @if (isDragging() && scrollDirection() > 0) {
+            <div class="kanban-scroll-indicator right" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          }
+          @if (isDragging() && scrollDirection() < 0) {
+            <div class="kanban-scroll-indicator left" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
             </div>
           }
         </div>
@@ -356,9 +381,11 @@ import { SignalRService } from '../../core/realtime/signalr.service';
   `
 })
 export class KanbanPageComponent implements OnInit, OnDestroy {
+  @ViewChild('kanbanGrid') kanbanGridRef?: ElementRef<HTMLElement>;
   private readonly kanbanApi = inject(KanbanApiService);
   private readonly dashboardApi = inject(DashboardApiService);
   private readonly signalr = inject(SignalRService);
+  private readonly ngZone = inject(NgZone);
   private realtimeSub?: Subscription;
 
   readonly board = signal<KanbanBoardData | null>(null);
@@ -374,6 +401,15 @@ export class KanbanPageComponent implements OnInit, OnDestroy {
   readonly modalOpen = signal<boolean>(false);
   readonly editingCardId = signal<string | null>(null);
   readonly selectedLabelIds = signal<string[]>([]);
+
+  readonly isDragging = signal<boolean>(false);
+  readonly scrollDirection = signal<number>(0);
+  private scrollRafId: number | null = null;
+  private currentScrollDirection = 0; // -1: left, +1: right, 0: none
+  private currentScrollSpeed = 0; // px per frame
+  private currentVerticalDirection = 0; // -1: up, +1: down, 0: none
+  private currentVerticalSpeed = 0; // px per frame
+  private activeMoveListener?: (e: MouseEvent | TouchEvent) => void;
 
   formTitle = '';
   formDescription = '';
@@ -400,6 +436,7 @@ export class KanbanPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.stopAutoScrollLoop();
     this.realtimeSub?.unsubscribe();
   }
 
@@ -440,7 +477,154 @@ export class KanbanPageComponent implements OnInit, OnDestroy {
     this.loadBoard();
   }
 
+  onCardDragStarted(event: CdkDragStart): void {
+    this.isDragging.set(true);
+    this.currentScrollDirection = 0;
+    this.currentScrollSpeed = 0;
+    this.currentVerticalDirection = 0;
+    this.currentVerticalSpeed = 0;
+    this.scrollDirection.set(0);
+
+    // Track pointer movement outside Angular zone for max 120fps performance without change detection lag
+    this.ngZone.runOutsideAngular(() => {
+      const onMove = (e: MouseEvent | TouchEvent) => {
+        if (!this.isDragging()) return;
+        const clientX = 'touches' in e && e.touches.length > 0
+          ? e.touches[0].clientX
+          : (e as MouseEvent).clientX;
+        const clientY = 'touches' in e && e.touches.length > 0
+          ? e.touches[0].clientY
+          : (e as MouseEvent).clientY;
+
+        this.computeScrollVectors(clientX, clientY);
+      };
+
+      this.activeMoveListener = onMove;
+      window.addEventListener('mousemove', onMove, { passive: true });
+      window.addEventListener('touchmove', onMove, { passive: true });
+    });
+
+    this.startAutoScrollLoop();
+  }
+
+  private computeScrollVectors(pointerX: number, pointerY: number): void {
+    const grid = this.kanbanGridRef?.nativeElement;
+    if (grid && grid.scrollWidth > grid.clientWidth) {
+      const rect = grid.getBoundingClientRect();
+      const edgeZone = Math.min(85, window.innerWidth * 0.24);
+
+      const leftBoundary = Math.max(rect.left, 0) + edgeZone;
+      const rightBoundary = Math.min(rect.right, window.innerWidth) - edgeZone;
+
+      if (pointerX > rightBoundary) {
+        const distance = pointerX - rightBoundary;
+        const intensity = Math.min(1, Math.max(0.15, distance / edgeZone));
+        this.currentScrollDirection = 1;
+        this.currentScrollSpeed = Math.round(intensity * 14) + 4;
+        if (this.scrollDirection() !== 1) {
+          this.ngZone.run(() => this.scrollDirection.set(1));
+        }
+      } else if (pointerX < leftBoundary) {
+        const distance = leftBoundary - pointerX;
+        const intensity = Math.min(1, Math.max(0.15, distance / edgeZone));
+        this.currentScrollDirection = -1;
+        this.currentScrollSpeed = Math.round(intensity * 14) + 4;
+        if (this.scrollDirection() !== -1) {
+          this.ngZone.run(() => this.scrollDirection.set(-1));
+        }
+      } else {
+        this.currentScrollDirection = 0;
+        this.currentScrollSpeed = 0;
+        if (this.scrollDirection() !== 0) {
+          this.ngZone.run(() => this.scrollDirection.set(0));
+        }
+      }
+    }
+
+    // Vertical auto-scrolling when near top or bottom of viewport
+    const topEdgeZone = 90;
+    const bottomEdgeZone = 90;
+    const bottomBoundary = window.innerHeight - bottomEdgeZone;
+
+    if (pointerY > bottomBoundary) {
+      const distance = pointerY - bottomBoundary;
+      const intensity = Math.min(1, Math.max(0.15, distance / bottomEdgeZone));
+      this.currentVerticalDirection = 1;
+      this.currentVerticalSpeed = Math.round(intensity * 14) + 3;
+    } else if (pointerY < topEdgeZone) {
+      const distance = topEdgeZone - pointerY;
+      const intensity = Math.min(1, Math.max(0.15, distance / topEdgeZone));
+      this.currentVerticalDirection = -1;
+      this.currentVerticalSpeed = Math.round(intensity * 14) + 3;
+    } else {
+      this.currentVerticalDirection = 0;
+      this.currentVerticalSpeed = 0;
+    }
+  }
+
+  onCardDragEnded(): void {
+    this.isDragging.set(false);
+    this.scrollDirection.set(0);
+    this.stopAutoScrollLoop();
+    if (this.activeMoveListener) {
+      window.removeEventListener('mousemove', this.activeMoveListener);
+      window.removeEventListener('touchmove', this.activeMoveListener);
+      this.activeMoveListener = undefined;
+    }
+  }
+
+  private startAutoScrollLoop(): void {
+    if (this.scrollRafId !== null) return;
+
+    this.ngZone.runOutsideAngular(() => {
+      const step = () => {
+        if (!this.isDragging()) {
+          this.scrollRafId = null;
+          return;
+        }
+
+        // Horizontal grid scroll
+        if (this.currentScrollDirection !== 0 && this.kanbanGridRef?.nativeElement) {
+          const grid = this.kanbanGridRef.nativeElement;
+          const delta = this.currentScrollDirection * this.currentScrollSpeed;
+          const maxScrollLeft = grid.scrollWidth - grid.clientWidth;
+          const nextScrollLeft = grid.scrollLeft + delta;
+
+          if (delta > 0 && grid.scrollLeft < maxScrollLeft) {
+            grid.scrollLeft = Math.min(maxScrollLeft, nextScrollLeft);
+          } else if (delta < 0 && grid.scrollLeft > 0) {
+            grid.scrollLeft = Math.max(0, nextScrollLeft);
+          }
+        }
+
+        // Vertical window scroll
+        if (this.currentVerticalDirection !== 0) {
+          window.scrollBy({
+            top: this.currentVerticalDirection * this.currentVerticalSpeed,
+            behavior: 'auto'
+          });
+        }
+
+        this.scrollRafId = requestAnimationFrame(step);
+      };
+
+      this.scrollRafId = requestAnimationFrame(step);
+    });
+  }
+
+  private stopAutoScrollLoop(): void {
+    if (this.scrollRafId !== null) {
+      cancelAnimationFrame(this.scrollRafId);
+      this.scrollRafId = null;
+    }
+    this.currentScrollDirection = 0;
+    this.currentScrollSpeed = 0;
+    this.currentVerticalDirection = 0;
+    this.currentVerticalSpeed = 0;
+  }
+
   onCardDrop(event: CdkDragDrop<KanbanCardItem[]>, targetColumn: KanbanColumnItem): void {
+    this.onCardDragEnded();
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
