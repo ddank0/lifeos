@@ -2060,9 +2060,10 @@ button:focus-visible,
   border: 1px solid var(--border-subtle);
   border-left: 4px solid var(--accent-sky);
   cursor: grab;
-  touch-action: none;
+  touch-action: pan-x pan-y;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
@@ -2072,6 +2073,9 @@ button:focus-visible,
 
 .kanban-card:active {
   cursor: grabbing;
+  border-color: rgba(169, 204, 240, 0.45);
+  transform: scale(0.98);
+  transition: transform 0.12s ease, border-color 0.12s ease;
 }
 
 .kanban-card.overdue {
@@ -2129,6 +2133,7 @@ button:focus-visible,
   cursor: grabbing !important;
   z-index: 1000 !important;
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5) !important;
+  touch-action: none !important;
 }
 
 .cdk-drag-preview {
@@ -2139,6 +2144,7 @@ button:focus-visible,
   max-width: 310px;
   transition: none !important;
   pointer-events: none;
+  scale: 0.98;
 }
 
 .cdk-drag-placeholder {

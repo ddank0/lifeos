@@ -149,6 +149,7 @@ import { SignalRService } from '../../core/realtime/signalr.service';
                     <article
                       class="kanban-card"
                       cdkDrag
+                      [cdkDragStartDelay]="{ touch: 280, mouse: 0 }"
                       (cdkDragStarted)="onCardDragStarted($event)"
                       (cdkDragEnded)="onCardDragEnded()"
                       (cdkDragReleased)="onCardDragEnded()"
@@ -478,6 +479,15 @@ export class KanbanPageComponent implements OnInit, OnDestroy {
   }
 
   onCardDragStarted(event: CdkDragStart): void {
+    // Haptic feedback (vibração) em dispositivos móveis compatíveis
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(45);
+      } catch {
+        // Ignorado caso o dispositivo restrinja vibração sem gesto direto
+      }
+    }
+
     this.isDragging.set(true);
     this.currentScrollDirection = 0;
     this.currentScrollSpeed = 0;
@@ -625,6 +635,13 @@ export class KanbanPageComponent implements OnInit, OnDestroy {
 
   onCardDrop(event: CdkDragDrop<KanbanCardItem[]>, targetColumn: KanbanColumnItem): void {
     this.onCardDragEnded();
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(25);
+      } catch {
+        // Ignorado caso o dispositivo restrinja
+      }
+    }
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
