@@ -1238,6 +1238,8 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 950;
+  overflow-y: auto;
+  padding: 16px;
 }
 
 .modal-panel {
@@ -1245,7 +1247,10 @@ body {
   border: 1px solid var(--border-pill);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
   border-radius: var(--radius-xl);
-  width: 540px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
   max-width: 92vw;
   padding: 28px;
   display: flex;
@@ -1521,7 +1526,8 @@ button:focus-visible,
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
-  width: 440px;
+  width: 100%;
+  max-width: 440px;
   padding: 36px;
   display: flex;
   flex-direction: column;
@@ -1926,6 +1932,341 @@ button:focus-visible,
 @media (max-width: 960px) {
   .habit-row-card {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Responsive Mobile Optimization (LifeOS Mobile System)
+   ========================================================================== */
+
+@media (max-width: 960px) {
+  .app-shell {
+    padding: 14px 16px 70px;
+    gap: 18px;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-radius: 18px;
+    gap: 12px;
+  }
+
+  .brand-logo {
+    order: 1;
+    font-size: 26px;
+  }
+
+  .topbar-right {
+    order: 2;
+    gap: 10px;
+  }
+
+  .nav-links {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .search-box {
+    order: 4;
+    width: 100%;
+    margin-top: 2px;
+  }
+
+  .bento-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .calendar-workspace-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .kanban-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 16px;
+    padding-bottom: 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .kanban-column {
+    min-width: 290px;
+    max-width: 320px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+
+  .calendar-toolbar-card {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .section-title {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 10px 12px 80px;
+    gap: 14px;
+  }
+
+  .topbar {
+    padding: 10px 14px;
+    border-radius: 16px;
+    gap: 10px;
+  }
+
+  .brand-logo {
+    font-size: 24px;
+  }
+
+  .user-pill {
+    padding: 2px 6px 2px 2px;
+    gap: 4px;
+  }
+
+  .user-pill span:not(.user-avatar) {
+    display: none;
+  }
+
+  .nav-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .nav-item {
+    justify-content: center;
+    padding: 8px 6px;
+    font-size: 12px;
+    gap: 5px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-pill-dark);
+  }
+
+  .modules-menu-wrapper {
+    width: 100%;
+  }
+
+  .modules-trigger-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .modules-dropdown-menu {
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-width: 0;
+    max-width: calc(100vw - 28px);
+  }
+
+  .user-dropdown-menu {
+    right: 0;
+    max-width: calc(100vw - 28px);
+    min-width: 240px;
+  }
+
+  .search-box {
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+
+  .section-header-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .section-title {
+    font-size: 22px;
+  }
+
+  .section-subtitle {
+    font-size: 12.5px;
+  }
+
+  .big-plus-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .area-pills,
+  .filter-bar {
+    gap: 6px;
+  }
+
+  .area-pill {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .filter-select {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .habit-card {
+    padding: 18px 14px;
+  }
+
+  .habit-percent {
+    font-size: 38px;
+  }
+
+  .habit-bars {
+    gap: 6px;
+    height: 110px;
+  }
+
+  .habit-bar-track {
+    width: 18px;
+    height: 65px;
+  }
+
+  .habit-week-dots {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    width: 100%;
+  }
+
+  .habit-day-btn {
+    min-width: 0;
+    padding: 6px 2px;
+    border-radius: 10px;
+    gap: 3px;
+  }
+
+  .habit-day-btn span {
+    font-size: 10.5px;
+  }
+
+  .diary-card {
+    min-height: 180px;
+    padding: 16px;
+  }
+
+  .tasks-panel,
+  .tomorrow-tasks-card,
+  .calendar-panel {
+    padding: 16px 12px;
+    border-radius: var(--radius-lg);
+  }
+
+  .task-row {
+    padding: 10px 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .task-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+
+  .calendar-header {
+    gap: 8px;
+  }
+
+  .calendar-header h3 {
+    font-size: 20px;
+  }
+
+  .week-strip {
+    gap: 2px;
+  }
+
+  .day-tab {
+    padding: 4px 2px 8px;
+  }
+
+  .day-tab .dow {
+    font-size: 10px;
+  }
+
+  .day-tab .dom {
+    font-size: 12.5px;
+  }
+
+  .calendar-board-card {
+    padding: 10px 6px;
+    border-radius: var(--radius-lg);
+  }
+
+  .calendar-toolbar-card {
+    padding: 12px 10px;
+  }
+
+  .calendar-period-title {
+    font-size: 16px;
+    width: 100%;
+    text-align: center;
+    min-width: 0;
+  }
+
+  .calendar-nav-group,
+  .calendar-view-switcher {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    padding: 6px 2px;
+    font-size: 10.5px;
+  }
+
+  .fc .fc-daygrid-day-number {
+    padding: 4px 5px;
+    font-size: 11px;
+  }
+
+  .fc .fc-event {
+    font-size: 10.5px;
+    padding: 2px 4px;
+  }
+
+  .modal-backdrop {
+    align-items: flex-start;
+    padding: 16px 10px 40px;
+  }
+
+  .modal-panel {
+    margin: 0 auto;
+    padding: 18px 14px;
+    border-radius: 18px;
+    max-height: none;
+  }
+
+  .form-grid-2,
+  .form-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .auth-page {
+    padding: 12px;
+    min-height: 80vh;
+  }
+
+  .auth-card {
+    padding: 24px 16px;
+    border-radius: 18px;
   }
 }
 
