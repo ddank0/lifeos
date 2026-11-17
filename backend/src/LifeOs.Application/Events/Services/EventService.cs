@@ -66,6 +66,15 @@ public sealed class EventService(
         var userId = currentUserService.UserId
                      ?? throw new InvalidOperationException("Usuário não autenticado.");
 
+        if (currentUserService.IsDemoUser)
+        {
+            var activeCount = await dbContext.Events.CountAsync(e => e.DeletedAt == null, cancellationToken);
+            if (activeCount >= 50)
+            {
+                throw new InvalidOperationException("Limite de 50 eventos atingido para a conta de demonstração.");
+            }
+        }
+
         var area = await dbContext.Areas.FirstOrDefaultAsync(a => a.Id == request.AreaId, cancellationToken)
                    ?? await dbContext.Areas.OrderBy(a => a.SortOrder).FirstOrDefaultAsync(cancellationToken)
                    ?? throw new InvalidOperationException("Área não encontrada.");

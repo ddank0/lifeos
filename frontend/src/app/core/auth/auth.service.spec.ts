@@ -13,14 +13,16 @@ describe('AuthService', () => {
       expiresAt: '2026-11-12T00:00:00Z',
       user: {
         id: '11111111-1111-1111-1111-111111111111',
-        fullName: 'Gabriel Miranda',
-        email: 'gabriel@lifeos.dev',
-        themePreference: 'dark'
+        fullName: 'Demo Account',
+        email: 'demo@lifeos.dev',
+        themePreference: 'dark',
+        isDemo: true
       }
     });
 
     expect(service.isAuthenticated()).toBe(true);
-    expect(service.currentUser()?.fullName).toBe('Gabriel Miranda');
+    expect(service.currentUser()?.fullName).toBe('Demo Account');
+    expect(service.currentUser()?.isDemo).toBe(true);
 
     service.logout();
     expect(service.isAuthenticated()).toBe(false);

@@ -3,6 +3,7 @@ export interface UserProfile {
   fullName: string;
   email: string;
   themePreference: 'dark' | 'light';
+  isDemo?: boolean;
 }
 
 export interface AuthResponse {

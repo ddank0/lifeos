@@ -51,6 +51,15 @@ public sealed class InboxService(
         var userId = currentUserService.UserId
                      ?? throw new InvalidOperationException("Usuário não autenticado.");
 
+        if (currentUserService.IsDemoUser)
+        {
+            var activeCount = await dbContext.QuickNotes.CountAsync(cancellationToken);
+            if (activeCount >= 50)
+            {
+                throw new InvalidOperationException("Limite de 50 notas atingido para a conta de demonstração.");
+            }
+        }
+
         Area? area = null;
         if (request.AreaId.HasValue && request.AreaId.Value != Guid.Empty)
         {

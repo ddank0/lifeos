@@ -13,9 +13,7 @@ test.describe('Auth and User Profile Menu', () => {
 
   test('should login successfully, open profile dropdown and logout cleanly', async ({ page }) => {
     await page.goto('/login');
-    await page.locator('input[type="email"]').fill('gabriel@lifeos.dev');
-    await page.locator('input[type="password"]').fill('LifeOs@2026');
-    await page.locator('button:has-text("Acessar Workspace")').click();
+    await page.locator('button:has-text("Entrar na Conta Demo")').click();
 
     await page.waitForURL('**/dashboard');
     await expect(page.locator('.user-pill')).toBeVisible();
@@ -23,8 +21,8 @@ test.describe('Auth and User Profile Menu', () => {
     // Clicking profile pill opens dropdown menu (does NOT directly log out!)
     await page.locator('.user-pill').click();
     await expect(page.locator('.user-dropdown-menu')).toBeVisible();
-    await expect(page.locator('.user-dropdown-name')).toContainText('Gabriel');
-    await expect(page.locator('.user-dropdown-email')).toContainText('gabriel@lifeos.dev');
+    await expect(page.locator('.user-dropdown-name')).toContainText('Demo Account');
+    await expect(page.locator('.user-dropdown-email')).toContainText('demo@lifeos.dev');
 
     // Check dropdown options
     await expect(page.locator('.user-dropdown-item:has-text("Configurações & Perfil")')).toBeVisible();

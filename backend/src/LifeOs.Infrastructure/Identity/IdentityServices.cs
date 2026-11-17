@@ -20,6 +20,23 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
             return Guid.TryParse(raw, out var id) ? id : null;
         }
     }
+
+    public string? Email =>
+        httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email)
+        ?? httpContextAccessor.HttpContext?.User?.FindFirstValue(JwtRegisteredClaimNames.Email);
+
+    public bool IsDemoUser
+    {
+        get
+        {
+            var isDemoClaim = httpContextAccessor.HttpContext?.User?.FindFirstValue("isDemo");
+            if (bool.TryParse(isDemoClaim, out var isDemo) && isDemo)
+            {
+                return true;
+            }
+            return Email?.Equals("demo@lifeos.dev", StringComparison.OrdinalIgnoreCase) == true;
+        }
+    }
 }
 
 public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerator
@@ -35,12 +52,16 @@ public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerato
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+        var isDemo = user.Email?.Equals("demo@lifeos.dev", StringComparison.OrdinalIgnoreCase) == true;
+
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-            new("fullName", user.FullName)
+            new(ClaimTypes.Email, user.Email ?? string.Empty),
+            new("fullName", user.FullName),
+            new("isDemo", isDemo.ToString().ToLowerInvariant())
         };
 
         var token = new JwtSecurityToken(

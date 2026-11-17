@@ -10,7 +10,8 @@ public record UserProfileDto(
     Guid Id,
     string FullName,
     string Email,
-    string ThemePreference);
+    string ThemePreference,
+    bool IsDemo = false);
 
 public record AuthResponse(
     string AccessToken,

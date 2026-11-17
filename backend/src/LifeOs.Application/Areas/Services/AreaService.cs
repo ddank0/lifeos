@@ -70,6 +70,15 @@ public sealed class AreaService(
         var userId = currentUserService.UserId
                      ?? throw new InvalidOperationException("Usuário não autenticado.");
 
+        if (currentUserService.IsDemoUser)
+        {
+            var areaCount = await dbContext.Areas.CountAsync(cancellationToken);
+            if (areaCount >= 15)
+            {
+                throw new InvalidOperationException("Limite de 15 áreas atingido para a conta de demonstração.");
+            }
+        }
+
         var maxOrder = await dbContext.Areas.Select(a => (int?)a.SortOrder).MaxAsync(cancellationToken) ?? 0;
 
         var area = new Area
@@ -159,6 +168,12 @@ public sealed class AreaService(
         var area = await dbContext.Areas.FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
         if (area is null)
         {
+            return false;
+        }
+
+        if (currentUserService.IsDemoUser && area.IsDefault)
+        {
+            // As áreas essenciais padrão não podem ser excluídas na conta de demonstração
             return false;
         }
 

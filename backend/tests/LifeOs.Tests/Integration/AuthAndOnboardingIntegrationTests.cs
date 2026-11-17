@@ -71,4 +71,46 @@ public class AuthAndOnboardingIntegrationTests : IClassFixture<WebApplicationFac
         var response = await _client.GetAsync("/api/v1/auth/me");
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    [Fact]
+    public async Task DemoUser_ShouldBeSeeded_AndProtectedAgainstProfileChangesAndDefaultAreaDeletion()
+    {
+        var loginReq = new LoginRequest("demo@lifeos.dev", "LifeOs@2026");
+        var loginRes = await _client.PostAsJsonAsync("/api/v1/auth/login", loginReq);
+        loginRes.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var authPayload = await loginRes.Content.ReadFromJsonAsync<AuthResponse>();
+        authPayload.Should().NotBeNull();
+        authPayload!.User.FullName.Should().Be("Demo Account");
+        authPayload.User.Email.Should().Be("demo@lifeos.dev");
+        authPayload.User.IsDemo.Should().BeTrue();
+
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", authPayload.AccessToken);
+
+        // Verifica que o endpoint me também retorna IsDemo = true
+        var meRes = await _client.GetAsync("/api/v1/auth/me");
+        meRes.StatusCode.Should().Be(HttpStatusCode.OK);
+        var meProfile = await meRes.Content.ReadFromJsonAsync<UserProfileDto>();
+        meProfile.Should().NotBeNull();
+        meProfile!.IsDemo.Should().BeTrue();
+
+        // Tentar alterar o nome para um nome malicioso / invasor
+        var updateProfileReq = new LifeOs.Application.Settings.DTOs.UpdateProfileSettingsRequest("Hacked Name", "light");
+        var updateRes = await _client.PutAsJsonAsync("/api/v1/settings/profile", updateProfileReq);
+        updateRes.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // O nome deve permanecer protegido como "Demo Account"
+        var meAfterUpdate = await (await _client.GetAsync("/api/v1/auth/me")).Content.ReadFromJsonAsync<UserProfileDto>();
+        meAfterUpdate!.FullName.Should().Be("Demo Account");
+        meAfterUpdate.ThemePreference.Should().Be("light");
+
+        // Tentar excluir uma área default na conta demo deve ser bloqueado
+        var areas = await (await _client.GetAsync("/api/v1/areas")).Content.ReadFromJsonAsync<List<AreaDto>>();
+        areas.Should().NotBeNull();
+        var defaultArea = areas!.First(a => a.IsDefault);
+
+        var deleteRes = await _client.DeleteAsync($"/api/v1/areas/{defaultArea.Id}");
+        deleteRes.StatusCode.Should().Be(HttpStatusCode.NotFound); // DeleteAsync retorna false -> NotFound
+    }
 }

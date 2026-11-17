@@ -13,7 +13,7 @@ export async function loginAsDefaultUser(page: Page): Promise<void> {
   const emailInput = page.locator('input[type="email"]');
   const passwordInput = page.locator('input[type="password"]');
 
-  await emailInput.fill('gabriel@lifeos.dev');
+  await emailInput.fill('demo@lifeos.dev');
   await passwordInput.fill('LifeOs@2026');
 
   await page.locator('button:has-text("Acessar Workspace")').click();

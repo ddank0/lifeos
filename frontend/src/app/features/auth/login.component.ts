@@ -44,7 +44,7 @@ import { AuthService } from '../../core/auth/auth.service';
           type="button"
           class="area-pill btn-coral"
           style="width:100%;padding:12px 20px;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:8px"
-          [disabled]="isLoading()"
+          [disabled]="isLoading() || isDemoLoading()"
           (click)="submit()"
         >
           @if (isLoading()) {
@@ -61,16 +61,33 @@ import { AuthService } from '../../core/auth/auth.service';
           }
         </button>
 
-        <div style="display:flex;justify-content:center;margin-top:6px">
-          <button
-            type="button"
-            class="area-pill"
-            style="font-size:11.5px;padding:4px 12px;opacity:0.75"
-            (click)="fillDemoCredentials()"
-          >
-            Preencher demo: gabriel&#64;lifeos.dev
-          </button>
+        <div style="display:flex;align-items:center;gap:12px;margin:8px 0;opacity:0.6">
+          <div style="flex:1;height:1px;background:var(--border-subtle)"></div>
+          <span style="font-size:12px;text-transform:uppercase;letter-spacing:0.05em">ou teste agora</span>
+          <div style="flex:1;height:1px;background:var(--border-subtle)"></div>
         </div>
+
+        <button
+          type="button"
+          class="area-pill btn-mint"
+          style="width:100%;padding:11px 20px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px"
+          [disabled]="isLoading() || isDemoLoading()"
+          (click)="loginAsDemo()"
+        >
+          @if (isDemoLoading()) {
+            <svg class="ui-icon" style="animation:spin 1s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+            <span>Entrando como Demo...</span>
+          } @else {
+            <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            <span>Entrar na Conta Demo</span>
+          }
+        </button>
 
         <p class="section-subtitle" style="text-align:center">
           Ainda não possui conta?
@@ -86,9 +103,10 @@ export class LoginComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  email = 'gabriel@lifeos.dev';
-  password = 'LifeOs@2026';
+  email = '';
+  password = '';
   readonly isLoading = signal(false);
+  readonly isDemoLoading = signal(false);
   readonly errorMsg = signal('');
 
   ngOnInit(): void {
@@ -97,9 +115,22 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  fillDemoCredentials(): void {
-    this.email = 'gabriel@lifeos.dev';
+  loginAsDemo(): void {
+    this.errorMsg.set('');
+    this.isDemoLoading.set(true);
+    this.email = 'demo@lifeos.dev';
     this.password = 'LifeOs@2026';
+
+    this.authService.login('demo@lifeos.dev', 'LifeOs@2026').subscribe({
+      next: () => {
+        this.isDemoLoading.set(false);
+        void this.router.navigate(['/dashboard']);
+      },
+      error: () => {
+        this.isDemoLoading.set(false);
+        this.errorMsg.set('Não foi possível autenticar na conta de demonstração no momento.');
+      }
+    });
   }
 
   submit(): void {

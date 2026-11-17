@@ -214,7 +214,10 @@ import { SignalRService } from '../core/realtime/signalr.service';
             title="Menu do Perfil"
           >
             <div class="user-avatar">{{ initials() }}</div>
-            <span style="font-size:12.5px;font-weight:600">{{ authService.currentUser()?.fullName || 'Gabriel' }}</span>
+            <span style="font-size:12.5px;font-weight:600">{{ authService.currentUser()?.fullName || 'Demo Account' }}</span>
+            @if (authService.currentUser()?.isDemo || authService.currentUser()?.email === 'demo@lifeos.dev') {
+              <span class="demo-badge">Demo</span>
+            }
             <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6"/>
             </svg>
@@ -225,8 +228,13 @@ import { SignalRService } from '../core/realtime/signalr.service';
               <div class="user-dropdown-header">
                 <div class="user-avatar-lg">{{ initials() }}</div>
                 <div class="user-dropdown-info">
-                  <span class="user-dropdown-name">{{ authService.currentUser()?.fullName || 'Gabriel Miranda' }}</span>
-                  <span class="user-dropdown-email">{{ authService.currentUser()?.email || 'gabriel@lifeos.dev' }}</span>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span class="user-dropdown-name">{{ authService.currentUser()?.fullName || 'Demo Account' }}</span>
+                    @if (authService.currentUser()?.isDemo || authService.currentUser()?.email === 'demo@lifeos.dev') {
+                      <span class="demo-badge">Demo</span>
+                    }
+                  </div>
+                  <span class="user-dropdown-email">{{ authService.currentUser()?.email || 'demo@lifeos.dev' }}</span>
                 </div>
               </div>
 
@@ -615,7 +623,7 @@ export class TopbarComponent {
   }
 
   initials(): string {
-    const name = this.authService.currentUser()?.fullName ?? 'GM';
+    const name = this.authService.currentUser()?.fullName || 'Demo Account';
     return name
       .split(' ')
       .slice(0, 2)

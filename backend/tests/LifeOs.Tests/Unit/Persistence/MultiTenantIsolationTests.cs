@@ -9,9 +9,11 @@ namespace LifeOs.Tests.Unit.Persistence;
 
 public class MultiTenantIsolationTests
 {
-    private sealed class FakeCurrentUserService(Guid? userId) : ICurrentUserService
+    private sealed class FakeCurrentUserService(Guid? userId, string? email = null, bool isDemo = false) : ICurrentUserService
     {
         public Guid? UserId => userId;
+        public string? Email => email;
+        public bool IsDemoUser => isDemo;
     }
 
     [Fact]

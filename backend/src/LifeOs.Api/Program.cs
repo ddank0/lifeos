@@ -151,23 +151,41 @@ using (var scope = app.Services.CreateScope())
 
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var onboarding = scope.ServiceProvider.GetRequiredService<UserOnboardingService>();
-    const string demoEmail = "gabriel@lifeos.dev";
+    const string demoEmail = "demo@lifeos.dev";
+    const string demoName = "Demo Account";
     var demoUser = await userManager.FindByEmailAsync(demoEmail);
     if (demoUser is null)
     {
-        demoUser = new ApplicationUser
+        var oldUser = await userManager.FindByEmailAsync("gabriel@lifeos.dev");
+        if (oldUser is not null)
         {
-            Id = Guid.NewGuid(),
-            UserName = demoEmail,
-            Email = demoEmail,
-            FullName = "Gabriel Miranda",
-            ThemePreference = "dark"
-        };
-        var created = await userManager.CreateAsync(demoUser, "LifeOs@2026");
-        if (created.Succeeded)
-        {
-            await onboarding.ProvisionInitialWorkspaceAsync(demoUser.Id);
+            oldUser.Email = demoEmail;
+            oldUser.UserName = demoEmail;
+            oldUser.FullName = demoName;
+            await userManager.UpdateAsync(oldUser);
+            demoUser = oldUser;
         }
+        else
+        {
+            demoUser = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                UserName = demoEmail,
+                Email = demoEmail,
+                FullName = demoName,
+                ThemePreference = "dark"
+            };
+            var created = await userManager.CreateAsync(demoUser, "LifeOs@2026");
+            if (created.Succeeded)
+            {
+                await onboarding.ProvisionInitialWorkspaceAsync(demoUser.Id);
+            }
+        }
+    }
+    else if (demoUser.FullName != demoName)
+    {
+        demoUser.FullName = demoName;
+        await userManager.UpdateAsync(demoUser);
     }
 
     if (!useInMemory)

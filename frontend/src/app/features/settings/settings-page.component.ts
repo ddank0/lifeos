@@ -158,10 +158,29 @@ import { AuthService } from '../../core/auth/auth.service';
             </div>
 
             <div class="module-card">
-              <h3 class="modal-title">Perfil e Aparência</h3>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <h3 class="modal-title">Perfil e Aparência</h3>
+                @if (isDemoUser()) {
+                  <span class="demo-badge">Conta Demo</span>
+                }
+              </div>
+
+              @if (isDemoUser()) {
+                <div style="margin:8px 0 12px;padding:8px 12px;border-radius:10px;background:rgba(245, 158, 11, 0.12);border:1px solid rgba(245, 158, 11, 0.25);font-size:12px;color:#f59e0b;line-height:1.4">
+                  O nome da conta de demonstração é protegido contra alteração por visitantes. Você pode alternar o tema abaixo.
+                </div>
+              }
+
               <div>
                 <label class="form-label">Nome de Exibição</label>
-                <input type="text" [(ngModel)]="profileName" class="form-input" />
+                <input
+                  type="text"
+                  [(ngModel)]="profileName"
+                  class="form-input"
+                  [disabled]="isDemoUser()"
+                  [style.opacity]="isDemoUser() ? '0.7' : '1'"
+                  [style.cursor]="isDemoUser() ? 'not-allowed' : 'text'"
+                />
               </div>
               <div>
                 <label class="form-label">Tema Padrão</label>
@@ -198,6 +217,10 @@ export class SettingsPageComponent implements OnInit, OnDestroy {
   profileTheme: 'dark' | 'light' = 'dark';
 
   reminderTaskId = '';
+
+  isDemoUser(): boolean {
+    return Boolean(this.authService.currentUser()?.isDemo || this.authService.currentUser()?.email === 'demo@lifeos.dev');
+  }
   reminderDate = new Date().toISOString().slice(0, 10);
   reminderTime = '09:00';
 

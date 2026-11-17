@@ -100,6 +100,15 @@ public sealed class TaskService(
         var userId = currentUserService.UserId
                      ?? throw new InvalidOperationException("Usuário não autenticado.");
 
+        if (currentUserService.IsDemoUser)
+        {
+            var activeCount = await dbContext.Tasks.CountAsync(t => t.DeletedAt == null, cancellationToken);
+            if (activeCount >= 60)
+            {
+                throw new InvalidOperationException("Limite de 60 tarefas ativas atingido para a conta de demonstração.");
+            }
+        }
+
         var area = await dbContext.Areas.FirstOrDefaultAsync(a => a.Id == request.AreaId, cancellationToken)
                    ?? await dbContext.Areas.OrderBy(a => a.SortOrder).FirstOrDefaultAsync(cancellationToken)
                    ?? throw new InvalidOperationException("Área não encontrada.");

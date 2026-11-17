@@ -52,6 +52,17 @@ public sealed class SettingsService(
             return null;
         }
 
+        if (currentUserService.IsDemoUser)
+        {
+            // Conta de demonstração: impede alteração do nome ou perfil
+            if (request.ThemePreference is "dark" or "light")
+            {
+                user.ThemePreference = request.ThemePreference;
+                await userManager.UpdateAsync(user);
+            }
+            return await GetOverviewAsync(cancellationToken);
+        }
+
         if (!string.IsNullOrWhiteSpace(request.FullName))
         {
             user.FullName = request.FullName.Trim();

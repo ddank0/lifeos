@@ -52,7 +52,8 @@ public class AuthController(
         await onboardingService.ProvisionInitialWorkspaceAsync(user.Id, cancellationToken);
 
         var (token, expiresAt) = jwtTokenGenerator.GenerateToken(user);
-        var profile = new UserProfileDto(user.Id, user.FullName, user.Email!, user.ThemePreference);
+        var isDemo = user.Email?.Equals("demo@lifeos.dev", StringComparison.OrdinalIgnoreCase) == true;
+        var profile = new UserProfileDto(user.Id, user.FullName, user.Email!, user.ThemePreference, isDemo);
         return CreatedAtAction(nameof(Me), new AuthResponse(token, expiresAt, profile));
     }
 
@@ -66,7 +67,8 @@ public class AuthController(
         }
 
         var (token, expiresAt) = jwtTokenGenerator.GenerateToken(user);
-        var profile = new UserProfileDto(user.Id, user.FullName, user.Email!, user.ThemePreference);
+        var isDemo = user.Email?.Equals("demo@lifeos.dev", StringComparison.OrdinalIgnoreCase) == true;
+        var profile = new UserProfileDto(user.Id, user.FullName, user.Email!, user.ThemePreference, isDemo);
         return Ok(new AuthResponse(token, expiresAt, profile));
     }
 
@@ -85,7 +87,8 @@ public class AuthController(
             return Unauthorized();
         }
 
-        return Ok(new UserProfileDto(user.Id, user.FullName, user.Email ?? string.Empty, user.ThemePreference));
+        var isDemo = user.Email?.Equals("demo@lifeos.dev", StringComparison.OrdinalIgnoreCase) == true;
+        return Ok(new UserProfileDto(user.Id, user.FullName, user.Email ?? string.Empty, user.ThemePreference, isDemo));
     }
 
     [Authorize]

@@ -49,6 +49,15 @@ public sealed class HabitService(
         var userId = currentUserService.UserId
                      ?? throw new InvalidOperationException("Usuário não autenticado.");
 
+        if (currentUserService.IsDemoUser)
+        {
+            var activeCount = await dbContext.Habits.CountAsync(h => h.IsActive, cancellationToken);
+            if (activeCount >= 25)
+            {
+                throw new InvalidOperationException("Limite de 25 hábitos atingido para a conta de demonstração.");
+            }
+        }
+
         var area = await dbContext.Areas.FirstOrDefaultAsync(a => a.Id == request.AreaId, cancellationToken)
                    ?? await dbContext.Areas.OrderBy(a => a.SortOrder).FirstOrDefaultAsync(cancellationToken)
                    ?? throw new InvalidOperationException("Área não encontrada.");
